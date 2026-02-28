@@ -126,7 +126,7 @@ export const useRoomStore = defineStore('room', () => {
     }
 
     turns.value.push({
-      round: currentRound.value,
+      round: currentRound.value || turns.value.length + 1,
       userInput: currentUserInput.value,
       responses: responses.map((r) => {
         trackAgent(r.agent_id)
@@ -153,7 +153,7 @@ export const useRoomStore = defineStore('room', () => {
 
     if (partialResponses.length > 0 || currentUserInput.value) {
       turns.value.push({
-        round: currentRound.value,
+        round: currentRound.value || turns.value.length + 1,
         userInput: currentUserInput.value,
         responses: partialResponses,
       })

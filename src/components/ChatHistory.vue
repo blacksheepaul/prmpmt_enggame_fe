@@ -9,8 +9,8 @@
     </div>
 
     <!-- Completed Turns -->
-    <template v-for="turn in store.turns" :key="turn.round">
-      <RoundDivider :round="turn.round" />
+    <template v-for="(turn, index) in store.turns" :key="`turn-${index}`">
+      <RoundDivider :round="turn.round ?? (index + 1)" />
       <UserMessage :content="turn.userInput" />
       <AgentBubble
         v-for="response in turn.responses"
@@ -24,7 +24,7 @@
 
     <!-- Current Streaming Turn -->
     <template v-if="hasStreamingContent">
-      <RoundDivider :round="store.currentRound" />
+      <RoundDivider :round="store.currentRound || (store.turns.length + 1)" />
       <UserMessage :content="store.currentUserInput" />
       <AgentBubble
         v-for="agentId in streamingAgentIds"
@@ -59,9 +59,7 @@ const streamingAgentIds = computed(() => {
 })
 
 const hasStreamingContent = computed(() => {
-  return store.currentState === 'streaming' && (
-    streamingAgentIds.value.length > 0 || store.currentUserInput
-  )
+  return store.currentState === 'streaming'
 })
 
 function onScroll() {
