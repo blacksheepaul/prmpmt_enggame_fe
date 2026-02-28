@@ -72,7 +72,12 @@ export const useRoomStore = defineStore('room', () => {
   // --- Event Handlers ---
 
   function handleRoomCreated(payload: RoomCreatedPayload) {
-    roomId.value = payload.id
+    // Don't overwrite roomId if already set from URL — the URL param is
+    // the authoritative source. The SSE payload.id may differ (e.g. an
+    // internal short ID) from the UUID returned by POST /rooms.
+    if (!roomId.value) {
+      roomId.value = payload.id
+    }
     currentState.value = payload.state || 'idle'
     lastEventOffset.value = payload.offset
     error.value = null
@@ -111,11 +116,19 @@ export const useRoomStore = defineStore('room', () => {
     currentState.value = 'done'
     lastEventOffset.value = payload.offset
 
-    // Move streaming content to history
+    // Build responses: prefer payload.responses from backend, fall back to
+    // whatever we accumulated via streaming tokens.
+    let responses = payload.responses
+    if (!responses || responses.length === 0) {
+      responses = Object.entries(streamingResponses)
+        .filter(([, content]) => content.length > 0)
+        .map(([agent_id, content]) => ({ agent_id, content }))
+    }
+
     turns.value.push({
       round: currentRound.value,
       userInput: currentUserInput.value,
-      responses: payload.responses.map((r) => {
+      responses: responses.map((r) => {
         trackAgent(r.agent_id)
         return { agent_id: r.agent_id, content: r.content }
       }),

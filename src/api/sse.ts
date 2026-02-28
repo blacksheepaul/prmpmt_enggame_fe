@@ -43,12 +43,22 @@ export function connectSSE(
     for (const type of eventTypes) {
       eventSource.addEventListener(type, (e: MessageEvent) => {
         try {
-          const data = JSON.parse(e.data)
-          // Track offset for reconnection
-          if (typeof data.offset === 'number') {
-            fromOffset = data.offset + 1
+          const raw = JSON.parse(e.data)
+          console.debug(`[SSE] ${type}:`, raw)
+
+          // Track offset for reconnection — offset lives on the envelope
+          if (typeof raw.offset === 'number') {
+            fromOffset = raw.offset + 1
           }
-          onEvent({ type, data })
+
+          // The backend wraps event-specific fields inside a `payload`
+          // property (see spec Event interface). Merge envelope-level
+          // fields (offset, turn_id, etc.) with the nested payload so
+          // handlers can access everything in a flat structure.
+          const payload = raw.payload ?? {}
+          const merged = { ...raw, ...payload }
+
+          onEvent({ type, data: merged })
         } catch (err) {
           console.error(`[SSE] Failed to parse ${type} event:`, err)
         }
