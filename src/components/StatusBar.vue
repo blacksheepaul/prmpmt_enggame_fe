@@ -1,8 +1,16 @@
 <template>
   <div>
+    <!-- Replaying Banner -->
+    <div
+      v-if="store.isReplaying"
+      class="bg-slate-700 text-slate-300 text-center text-sm py-1.5 px-4"
+    >
+      Loading history...
+    </div>
+
     <!-- Reconnecting Banner -->
     <div
-      v-if="store.isReconnecting"
+      v-else-if="store.isReconnecting"
       class="bg-amber-600 text-white text-center text-sm py-1.5 px-4"
     >
       Reconnecting to server...

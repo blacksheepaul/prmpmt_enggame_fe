@@ -24,6 +24,7 @@ export const useRoomStore = defineStore('room', () => {
   const roomId = ref<string | null>(null)
   const isConnected = ref(false)
   const isReconnecting = ref(false)
+  const isReplaying = ref(false)
   const lastEventOffset = ref(0)
 
   // --- Room state ---
@@ -81,6 +82,10 @@ export const useRoomStore = defineStore('room', () => {
     currentState.value = payload.state || 'idle'
     lastEventOffset.value = payload.offset
     error.value = null
+    // If the room is idle (no turns yet), replay is already complete
+    if (payload.state === 'idle' || !payload.state) {
+      isReplaying.value = false
+    }
     persistOffset()
   }
 
@@ -115,6 +120,7 @@ export const useRoomStore = defineStore('room', () => {
   function handleTurnCompleted(payload: TurnCompletedPayload) {
     currentState.value = 'done'
     lastEventOffset.value = payload.offset
+    isReplaying.value = false
 
     // Build responses: prefer payload.responses from backend, fall back to
     // whatever we accumulated via streaming tokens.
@@ -145,6 +151,7 @@ export const useRoomStore = defineStore('room', () => {
   function handleTurnCancelled(payload: TurnCancelledPayload) {
     currentState.value = 'cancelled'
     lastEventOffset.value = payload.offset
+    isReplaying.value = false
 
     // Save whatever was streamed so far into history
     const partialResponses = Object.entries(streamingResponses)
@@ -202,6 +209,7 @@ export const useRoomStore = defineStore('room', () => {
     roomId.value = null
     isConnected.value = false
     isReconnecting.value = false
+    isReplaying.value = false
     lastEventOffset.value = 0
     currentState.value = 'idle'
     currentRound.value = 0
@@ -222,6 +230,7 @@ export const useRoomStore = defineStore('room', () => {
     roomId,
     isConnected,
     isReconnecting,
+    isReplaying,
     lastEventOffset,
     currentState,
     currentRound,

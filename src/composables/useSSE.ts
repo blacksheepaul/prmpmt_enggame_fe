@@ -7,23 +7,25 @@ export function useSSE() {
   let connection: SSEConnection | null = null
 
   function connect(roomId: string) {
-    // Disconnect any existing connection
     disconnect()
 
-    const fromOffset = store.loadOffset(roomId)
+    // Always replay from offset 0 on initial page load so the full event
+    // history is replayed and the store is rebuilt from scratch.
+    // The SSE manager internally tracks the latest offset and uses it when
+    // auto-reconnecting after a dropped connection — that's the only case
+    // where we skip already-seen events.
+    store.isReplaying = true
     store.isReconnecting = false
 
     connection = connectSSE(
       roomId,
-      fromOffset,
+      0,
       (event) => store.dispatchEvent(event),
       () => {
-        // onConnected
         store.isConnected = true
         store.isReconnecting = false
       },
       () => {
-        // onDisconnected
         store.isConnected = false
         store.isReconnecting = true
       },
